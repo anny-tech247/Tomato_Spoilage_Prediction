@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tomato Spoilage Prediction</title>
+</head>
+<body>
+    <h1>Tomato Spoilage Prediction</h1>
+    <form method="POST">
+        <label>Temperature:</label>
+        <input type="number" step="any" name="temperature" required><br><br>
+        
+        <label>Humidity:</label>
+        <input type="number" step="any" name="humidity" required><br><br>
+        
+        <label>Freshness Code:</label>
+        <input type="number" name="freshness_code" required><br><br>
+        
+        <input type="submit" value="Predict">
+    </form>
+
+    {% if prediction %}
+        <h2>Prediction: {{ prediction }}</h2>
+    {% endif %}
+</body>
+</html>
