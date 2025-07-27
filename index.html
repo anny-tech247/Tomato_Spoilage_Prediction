@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tomato Spoilage Prediction</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .tomato-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: #f8f9fa;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result.fresh {
+            background-color: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .result.spoiled {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .result.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .input-hint {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .prediction-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #0abde3);
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        .details {
+            font-size: 0.9em;
+            margin-top: 15px;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="tomato-icon">🍅</div>
+            <h1>Tomato Spoilage Prediction</h1>
+            <p>Enter environmental conditions to predict freshness</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <strong>Error:</strong> <span id="error-message"></span>
+        </div>
+
+        <form id="prediction-form">
+            <div class="form-group">
+                <label for="temperature">Temperature (°C)</label>
+                <input 
+                    type="number" 
+                    step="0.1" 
+                    name="temperature" 
+                    id="temperature" 
+                    required 
+                    min="-10" 
+                    max="50"
+                    placeholder="e.g., 22.5"
+                >
+                <div class="input-hint">Typical range: 15°C - 30°C</div>
+            </div>
+
+            <div class="form-group">
+                <label for="humidity">Humidity (%)</label>
+                <input 
+                    type="number" 
+                    step="0.1" 
+                    name="humidity" 
+                    id="humidity" 
+                    required 
+                    min="0" 
+                    max="100"
+                    placeholder="e.g., 65.0"
+                >
+                <div class="input-hint">Range: 0% - 100%</div>
+            </div>
+
+            <div class="form-group">
+                <label for="storage-days">Days in Storage</label>
+                <input 
+                    type="number" 
+                    step="1" 
+                    name="storage-days" 
+                    id="storage-days" 
+                    required 
+                    min="0" 
+                    max="30"
+                    placeholder="e.g., 5"
+                >
+                <div class="input-hint">How many days have the tomatoes been stored?</div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="predict-btn">
+                🔍 Predict Spoilage
+            </button>
+        </form>
+
+        <div id="result" class="result">
+            <div class="prediction-icon" id="prediction-icon"></div>
+            <div id="prediction-text"></div>
+            <div id="confidence-display" style="font-size: 0.9em; margin-top: 8px; opacity: 0.8;"></div>
+            <div class="confidence-bar">
+                <div class="confidence-fill" id="confidence-fill" style="width: 0%;"></div>
+            </div>
+            <div class="details" id="prediction-details"></div>
+        </div>
+    </div>
+
+    <script>
+        class TomatoSpoilagePredictor {
+            constructor() {
+                this.form = document.getElementById('prediction-form');
+                this.resultDiv = document.getElementById('result');
+                this.errorDiv = document.getElementById('error');
+                this.predictBtn = document.getElementById('predict-btn');
+                
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                this.form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.predict();
+                });
+            }
+
+            showError(message) {
+                document.getElementById('error-message').textContent = message;
+                this.errorDiv.style.display = 'block';
+                this.resultDiv.classList.remove('show');
+            }
+
+            hideError() {
+                this.errorDiv.style.display = 'none';
+            }
+
+            predict() {
+                this.hideError();
+                
+                const temperature = parseFloat(document.getElementById('temperature').value);
+                const humidity = parseFloat(document.getElementById('humidity').value);
+                const storageDays = parseInt(document.getElementById('storage-days').value);
+
+                // Validation
+                if (isNaN(temperature) || isNaN(humidity) || isNaN(storageDays)) {
+                    this.showError('Please fill in all fields with valid numbers');
+                    return;
+                }
+
+                if (humidity < 0 || humidity > 100) {
+                    this.showError('Humidity must be between 0 and 100');
+                    return;
+                }
+
+                if (temperature < -10 || temperature > 50) {
+                    this.showError('Temperature must be between -10°C and 50°C');
+                    return;
+                }
+
+                if (storageDays < 0 || storageDays > 30) {
+                    this.showError('Storage days must be between 0 and 30');
+                    return;
+                }
+
+                // Show loading state
+                this.predictBtn.innerHTML = '🔄 Predicting...';
+                this.predictBtn.disabled = true;
+
+                // Simulate processing time
+                setTimeout(() => {
+                    this.makePrediction(temperature, humidity, storageDays);
+                    this.predictBtn.innerHTML = '🔍 Predict Spoilage';
+                    this.predictBtn.disabled = false;
+                }, 1000);
+            }
+
+            makePrediction(temperature, humidity, storageDays) {
+                let spoilageScore = 0;
+                let details = [];
+                let factors = [];
+
+                // Temperature factor (optimal range: 12-15°C for storage)
+                if (temperature > 25) {
+                    spoilageScore += (temperature - 25) * 3;
+                    factors.push('High temperature accelerates spoilage');
+                } else if (temperature > 15) {
+                    spoilageScore += (temperature - 15) * 1.5;
+                    factors.push('Moderately warm temperature');
+                } else if (temperature < 5) {
+                    spoilageScore += (5 - temperature) * 2;
+                    factors.push('Very cold temperature may cause chilling injury');
+                }
+
+                // Humidity factor (optimal: 85-90% for fresh tomatoes)
+                if (humidity > 95) {
+                    spoilageScore += (humidity - 95) * 4;
+                    factors.push('Very high humidity promotes mold growth');
+                } else if (humidity > 90) {
+                    spoilageScore += (humidity - 90) * 2;
+                    factors.push('High humidity increases spoilage risk');
+                } else if (humidity < 60) {
+                    spoilageScore += (60 - humidity) * 1.5;
+                    factors.push('Low humidity causes dehydration and shriveling');
+                }
+
+                // Storage time factor
+                if (storageDays > 14) {
+                    spoilageScore += (storageDays - 14) * 5;
+                    factors.push('Extended storage time significantly increases spoilage risk');
+                } else if (storageDays > 7) {
+                    spoilageScore += (storageDays - 7) * 2;
+                    factors.push('Moderate storage time');
+                } else if (storageDays > 3) {
+                    spoilageScore += storageDays * 1;
+                    factors.push('Recent storage');
+                }
+
+                // Combined effect multiplier
+                if (temperature > 20 && humidity > 80) {
+                    spoilageScore *= 1.3;
+                    factors.push('Hot and humid conditions are particularly harmful');
+                }
+
+                // Calculate confidence (based on how extreme the conditions are)
+                let confidence = Math.min(0.95, 0.7 + Math.abs(spoilageScore) / 100);
+
+                // Determine prediction
+                let prediction, className, icon, recommendation;
+                
+                if (spoilageScore < 15) {
+                    prediction = 'Fresh - Safe to consume';
+                    className = 'fresh';
+                    icon = '✅';
+                    recommendation = 'Tomatoes should be in good condition. Continue monitoring storage conditions.';
+                } else if (spoilageScore < 35) {
+                    prediction = 'Caution - Check for signs of spoilage';
+                    className = 'warning';
+                    icon = '⚠️';
+                    recommendation = 'Inspect tomatoes carefully for soft spots, discoloration, or unusual odors before consuming.';
+                } else {
+                    prediction = 'Likely Spoiled - Not recommended for consumption';
+                    className = 'spoiled';
+                    icon = '❌';
+                    recommendation = 'High risk of spoilage. Check for mold, soft spots, or off-odors. Consider discarding if any signs of spoilage are present.';
+                }
+
+                this.displayResult(prediction, className, icon, confidence, recommendation, factors);
+            }
+
+            displayResult(prediction, className, icon, confidence, recommendation, factors) {
+                // Update result content
+                document.getElementById('prediction-icon').textContent = icon;
+                document.getElementById('prediction-text').textContent = prediction;
+                document.getElementById('confidence-display').textContent = `Confidence: ${Math.round(confidence * 100)}%`;
+                
+                // Update confidence bar
+                document.getElementById('confidence-fill').style.width = `${confidence * 100}%`;
+                
+                // Update details
+                let detailsText = recommendation;
+                if (factors.length > 0) {
+                    detailsText += `\n\nFactors considered: ${factors.join(', ')}.`;
+                }
+                document.getElementById('prediction-details').textContent = detailsText;
+
+                // Update styling and show result
+                this.resultDiv.className = `result ${className}`;
+                setTimeout(() => {
+                    this.resultDiv.classList.add('show');
+                }, 100);
+            }
+        }
+
+        // Initialize the predictor when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new TomatoSpoilagePredictor();
+        });
+    </script>
+</body>
+</html>
